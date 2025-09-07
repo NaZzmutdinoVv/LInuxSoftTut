@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinuxSoftTut - Приложение</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Ubuntu', 'Segoe UI', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+            color: #c9d1d9;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .app-container {
+            display: grid;
+            grid-template-columns: 220px 1fr;
+            grid-template-rows: 50px 1fr 30px;
+            height: 100vh;
+        }
+        
+        header {
+            grid-column: 1 / 3;
+            background-color: #161b22;
+            border-bottom: 1px solid #30363d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 1rem;
+        }
+        
+        .app-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .app-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .app-controls button {
+            background: none;
+            border: none;
+            color: #8b949e;
+            cursor: pointer;
+            padding: 0.3rem;
+            border-radius: 4px;
+        }
+        
+        .app-controls button:hover {
+            background-color: #30363d;
+        }
+        
+        sidebar {
+            background-color: #0d1117;
+            border-right: 1px solid #30363d;
+            padding: 1rem 0;
+            overflow-y: auto;
+        }
+        
+        .nav-item {
+            padding: 0.7rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .nav-item:hover {
+            background-color: #161b22;
+        }
+        
+        .nav-item.active {
+            background-color: #1c6bba;
+            color: white;
+        }
+        
+        main {
+            padding: 1rem;
+            overflow-y: auto;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .terminal-container {
+            background-color: #0d1117;
+            border-radius: 8px;
+            border: 1px solid #30363d;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .terminal-header {
+            padding: 0.7rem 1rem;
+            background-color: #161b22;
+            border-bottom: 1px solid #30363d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+        
+        .terminal-actions button {
+            background-color: #238636;
+            color: white;
+            border: none;
+            padding: 0.3rem 0.7rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        
+        .terminal-window {
+            flex-grow: 1;
+            padding: 1rem;
+            font-family: 'Fira Code', 'Cascadia Code', monospace;
+            overflow-y: auto;
+        }
+        
+        .command-line {
+            display: flex;
+            align-items: center;
+            margin-top: 0.5rem;
+        }
+        
+        .prompt {
+            color: #58a6ff;
+            margin-right: 0.5rem;
+        }
+        
+        .command-input {
+            background: transparent;
+            border: none;
+            color: #c9d1d9;
+            font-family: monospace;
+            flex-grow: 1;
+            outline: none;
+            font-size: 1rem;
+        }
+        
+        .docs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .doc-card {
+            background-color: #161b22;
+            border-radius: 8px;
+            padding: 1rem;
+            border: 1px solid #30363d;
+            transition: transform 0.2s;
+        }
+        
+        .doc-card:hover {
+            transform: translateY(-3px);
+            border-color: #58a6ff;
+        }
+        
+        footer {
+            grid-column: 1 / 3;
+            background-color: #161b22;
+            border-top: 1px solid #30363d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 1rem;
+            font-size: 0.8rem;
+            color: #8b949e;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Анимации */
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        
+        .cursor {
+            display: inline-block;
+            width: 8px;
+            height: 1.2em;
+            background-color: #58a6ff;
+            vertical-align: middle;
+            margin-left: 2px;
+            animation: blink 1s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <div class="app-title">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="#58a6ff" stroke-width="2"/>
+                    <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" fill="#58a6ff"/>
+                    <path d="M12 6V8" stroke="#58a6ff" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M12 16V18" stroke="#58a6ff" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M7.05078 7.05078L8.46078 8.46078" stroke="#58a6ff" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M15.5391 15.5391L16.9491 16.9491" stroke="#58a6ff" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M6 12H8" stroke="#58a6ff" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M16 12H18" stroke="#58a6ff" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M7.05078 16.9492L8.46078 15.5392" stroke="#58a6ff" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M15.5391 8.46094L16.9491 7.05094" stroke="#58a6ff" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span>LinuxSoftTut</span>
+            </div>
+            <div class="app-controls">
+                <button title="Свернуть">—</button>
+                <button title="Развернуть">□</button>
+                <button title="Закрыть">×</button>
+            </div>
+        </header>
+        
+        <sidebar>
+            <div class="nav-item active" data-tab="terminal">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 17H20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M4 12H20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M4 7H20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span>Терминал</span>
+            </div>
+            <div class="nav-item" data-tab="docs">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M14 2H6C4.89543 2 4 2.89543 4 4V20C4 21.1046 4.89543 22 6 22H18C19.1046 22 20 21.1046 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M14 2V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M16 13H8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M16 17H8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M10 9H8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span>Документация</span>
+            </div>
+            <div class="nav-item" data-tab="distros">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="2"/>
+                    <path d="M12 6V12L16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Дистрибутивы</span>
+            </div>
+            <div class="nav-item" data-tab="help">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="2"/>
+                    <path d="M9.09 9C9.3251 8.33167 9.78915 7.76811 10.4 7.40913C11.0108 7.05016 11.7289 6.91894 12.4272 7.03871C13.1255 7.15848 13.7588 7.52152 14.2151 8.06353C14.6713 8.60553 14.9211 9.29152 14.92 10C14.92 12 11.92 13 11.92 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M12 17H12.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span>Помощь</span>
+            </div>
+        </sidebar>
+        
+        <main>
+            <div class="tab-content active" id="terminal">
+                <div class="terminal-container">
+                    <div class="terminal-header">
+                        <div>Терминал Linux</div>
+                        <div class="terminal-actions">
+                            <button>Очистить</button>
+                        </div>
+                    </div>
+                    <div class="terminal-window">
+                        <div>Добро пожаловать в LinuxSoftTut Terminal v1.0</div>
+                        <div>Введите 'help' для списка доступных команд</div>
+                        <div class="command-line">
+                            <span class="prompt">user@linuxsofttut:~$</span>
+                            <input type="text" class="command-input" autofocus>
+                            <span class="cursor"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="docs">
+                <h2>Документация по командам Bash</h2>
+                <div class="docs-grid">
+                    <div class="doc-card">
+                        <h3>Основные команды</h3>
+                        <p>ls, cd, pwd, mkdir, rm, cp, mv</p>
+                    </div>
+                    <div class="doc-card">
+                        <h3>Работа с файлами</h3>
+                        <p>cat, grep, find, chmod, chown</p>
+                    </div>
+                    <div class="doc-card">
+                        <h3>Системные команды</h3>
+                        <p>ps, top, kill, systemctl, journalctl</p>
+                    </div>
+                    <div class="doc-card">
+                        <h3>Сетевые команды</h3>
+                        <p>ping, ssh, scp, wget, curl</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="distros">
+                <h2>Популярные дистрибутивы Linux</h2>
+                <div class="docs-grid">
+                    <div class="doc-card">
+                        <h3>Ubuntu</h3>
+                        <p>Один из самых популярных дистрибутивов для начинающих</p>
+                    </div>
+                    <div class="doc-card">
+                        <h3>Debian</h3>
+                        <p>Стабильный и надежный дистрибутив</p>
+                    </div>
+                    <div class="doc-card">
+                        <h3>Fedora</h3>
+                        <p>Инновационный дистрибутив с последними технологиями</p>
+                    </div>
+                    <div class="doc-card">
+                        <h3>Arch Linux</h3>
+                        <p>Минималистичный дистрибутив для опытных пользователей</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tab-content" id="help">
+                <h2>Помощь и поддержка</h2>
+                <div class="doc-card">
+                    <h3>Встроенный помощник</h3>
+                    <p>Задайте вопрос о Linux или использовании приложения:</p>
+                    <div class="command-line" style="margin-top: 1rem;">
+                        <input type="text" class="command-input" placeholder="Введите ваш вопрос...">
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <footer>
+            <div class="status-item">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M5 12.55C6.976 11.183 10.5 9.5 12 13.5C13.5 9.5 17.024 11.183 19 12.55" stroke="#238636" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Подключено</span>
+            </div>
+            <div>LinuxSoftTut v1.0</div>
+        </footer>
+    </div>
+
+    <script>
+        // Навигация по вкладкам
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                // Убираем активный класс у всех элементов
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                
+                // Добавляем активный класс к выбранному элементу
+                this.classList.add('active');
+                
+                // Показываем соответствующую вкладку
+                const tabId = this.getAttribute('data-tab');
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+        
+        // Эмуляция работы терминала
+        const commandInput = document.querySelector('.command-input');
+        const terminalWindow = document.querySelector('.terminal-window');
+        
+        commandInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const command = this.value.trim();
+                if (command) {
+                    // Добавляем команду в историю
+                    const commandLine = document.createElement('div');
+                    commandLine.innerHTML = `<span class="prompt">user@linuxsofttut:~$</span> ${command}`;
+                    terminalWindow.appendChild(commandLine);
+                    
+                    // Обрабатываем команду
+                    let output = '';
+                    switch(command) {
+                        case 'help':
+                            output = 'Доступные команды: help, ls, pwd, echo, clear';
+                            break;
+                        case 'ls':
+                            output = 'documents\n downloads\n images\n videos';
+                            break;
+                        case 'pwd':
+                            output = '/home/user';
+                            break;
+                        case 'clear':
+                            terminalWindow.innerHTML = '';
+                            output = '';
+                            break;
+                        default:
+                            output = `Команда '${command}' не найдена. Введите 'help' для списка команд.`;
+                    }
+                    
+                    if (output) {
+                        const outputLine = document.createElement('div');
+                        outputLine.textContent = output;
+                        outputLine.classList.add('terminal-output');
+                        terminalWindow.appendChild(outputLine);
+                    }
+                    
+                    // Прокручиваем к низу
+                    terminalWindow.scrollTop = terminalWindow.scrollHeight;
+                    
+                    // Очищаем input
+                    this.value = '';
+                }
+            }
+        });
+    </script>
+</body>
+</html>
